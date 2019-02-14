@@ -19,22 +19,13 @@ class ViewController: UITableViewController, UISearchResultsUpdating {
         search.searchResultsUpdater = self
         navigationItem.searchController = search
         
-        DispatchQueue.global().async {
-            do {
-                let url = URL(string: "https://www.hackingwithswift.com/samples/friendface.json")!
-                let data = try Data(contentsOf: url)
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                
-                let downloaded = try decoder.decode([Friends].self, from: data)
-                DispatchQueue.main.async {
-                    self.friends = downloaded
-                    self.filtered = downloaded
-                    self.tableView.reloadData()
-                }
-            } catch {
-                print(error.localizedDescription)
-            }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let url = "https://www.hackingwithswift.com/samples/friendface.json"
+        decoder.decode([Friends].self, fromURL: url) { friends in
+            self.friends = friends
+            self.filtered = friends
+            self.tableView.reloadData()
         }
     }
     
@@ -46,18 +37,12 @@ class ViewController: UITableViewController, UISearchResultsUpdating {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "Cell")
         let friend = filtered[indexPath.row]
         cell.textLabel?.text = friend.name
-        cell.detailTextLabel?.text = friend.friends.map { $0.name }.joined(separator: ", ")
+        cell.detailTextLabel?.text = friend.friendList
         return cell
     }
     
     func updateSearchResults(for searchController: UISearchController) {
-        if let text = searchController.searchBar.text, text.count > 0 {
-            filtered = friends.filter {
-                $0.name.contains(text) || $0.company.contains(text) || $0.address.contains(text)
-            }
-        } else {
-            filtered = friends
-        }
+        filtered = friends.matching(searchController.searchBar.text)
         tableView.reloadData()
     }
 }
