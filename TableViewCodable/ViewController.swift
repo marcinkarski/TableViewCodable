@@ -1,9 +1,8 @@
 import UIKit
 
-class ViewController: UITableViewController, UISearchResultsUpdating {
+class ViewController: UITableViewController {
     
-    var friends = [Friends]()
-    var filtered = [Friends]()
+    let dataSource = DataSource()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -12,37 +11,17 @@ class ViewController: UITableViewController, UISearchResultsUpdating {
     
     private func setup() {
         self.title = "TableView Codable"
+        dataSource.dataChanged = { [weak self] in
+            self?.tableView.reloadData()
+        }
+        dataSource.fetch("https://www.hackingwithswift.com/samples/friendface.json")
+        tableView.dataSource = dataSource
         
         let search = UISearchController(searchResultsController: nil)
         search.obscuresBackgroundDuringPresentation = false
         search.searchBar.placeholder = "Find a friend"
-        search.searchResultsUpdater = self
+        search.searchResultsUpdater = dataSource
         navigationItem.searchController = search
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let url = "https://www.hackingwithswift.com/samples/friendface.json"
-        decoder.decode([Friends].self, fromURL: url) { friends in
-            self.friends = friends
-            self.filtered = friends
-            self.tableView.reloadData()
-        }
-    }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return filtered.count
-    }
-    
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "Cell")
-        let friend = filtered[indexPath.row]
-        cell.textLabel?.text = friend.name
-        cell.detailTextLabel?.text = friend.friendList
-        return cell
-    }
-    
-    func updateSearchResults(for searchController: UISearchController) {
-        filtered = friends.matching(searchController.searchBar.text)
-        tableView.reloadData()
     }
 }
